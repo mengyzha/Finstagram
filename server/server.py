@@ -102,11 +102,16 @@ def all_photos():
 		username = request.args['username']
 		if (username):
 			query = 'SELECT * FROM Photo WHERE photoOwner = %s ORDER BY timestamp'
-			with conn.cursor() as cursor:
-				cursor.execute(query, username)
+			# try:
+			cursor = conn.cursor()
+
+			# with conn.cursor() as cursor:
+			cursor.execute(query, username)
 			photos = cursor.fetchall()
 			response_object['errno'] = 0
 			response_object['photos'] = photos
+			cursor.close()
+
 			return jsonify(response_object)
 		response_object['errno'] = 403
 		response_object['errmsg'] = 'You need to login first'
@@ -332,10 +337,19 @@ def all_groups():
 		print(username)
 
 		query = 'SELECT groupName FROM CloseFriendGroup WHERE groupOwner = %s'
-		with conn.cursor() as cursor:
-			cursor.execute(query, username)
-		groups = cursor.fetchall()
-		response_object['groups'] = groups
+		try:
+			with conn.cursor() as cursor:
+				cursor.execute(query, username)
+				groups = cursor.fetchall()
+				response_object['groups'] = groups
+		except Exception as error:
+			errmsg = error.args
+			print(errmsg)
+			# conn.rollback()
+			# response_object['errno'] = errno
+			# response_object['message'] = errmsg
+
+		
 		# cursor.close()
 
 	return jsonify(response_object)

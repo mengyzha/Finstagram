@@ -166,7 +166,11 @@ export default {
     }
 
     this.getPhotos();
-    // this.getGroups();
+    
+    // single thread, we only have one connection
+    setTimeout(()=> {
+      this.getGroups();
+    }, 1000);
   },
   methods: {
     getPhotos() {
@@ -198,18 +202,19 @@ export default {
       };
       axios.get(path, {params})
         .then((res) => {
-          console.log(res.data.message);
+          console.log("successfully get groups");
+          // console.log(res.data.message);
           console.log(res.data.groups);
           this.constructOptions(res.data.groups);
         }).catch((error) => {
           // eslint-disable-next-line
-          console.log(res.data.status);
+          console.log(error);
         });
     },
     constructOptions(groups) {
-      for (i = 0; i < groups.length; ++i) {
+      for (let i = 0; i < groups.length; ++i) {
         this.options.push({value: groups[i].groupName, text: groups[i].groupName});
-        console.log(groups[i].groupName + " " + groups[i].groupName);
+        // console.log(i + groups[i].groupName);
       }
     },
     addPhoto(payload) {
