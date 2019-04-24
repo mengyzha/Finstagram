@@ -40,7 +40,7 @@
             <tr v-for="(group, index) in groups" :key="index">
               <td>{{ group.groupName }}</td>
               <td>{{ group.groupOwner }}</td>
-              <td>
+              <td v-if="group.groupOwner === username">
                 <button type="button" v-b-modal.add-modal @click="setGroupName(group.groupName)" class="btn btn-success btn-sm">
                   Add User</button>
                 <button
@@ -125,6 +125,7 @@ export default {
   name: 'Group',
   data() {
     return {
+      username: null,
       groups: [],
       addUserForm: {
         username: '',
@@ -144,6 +145,7 @@ export default {
     alert: Alert,
   },
   created() {
+    this.username = localStorage.username;
     this.getGroups();
   },
   methods: {

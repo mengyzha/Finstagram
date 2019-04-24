@@ -331,9 +331,9 @@ def getTagList():
 
 @app.route('/group', methods = ['POST', 'PUT', 'GET'])
 def all_groups():
-	# cursor = conn.cursor()
 	response_object = {'status': 'success'}
 	if (request.method == 'POST'):
+		# only groupOwner can add group
 		post_data = request.get_json()
 		username = post_data.get('username')
 		groupName = post_data.get('groupName')
@@ -352,13 +352,19 @@ def all_groups():
 			response_object['errno'] = errno
 			response_object['message'] = 'Group already existed'
 			return jsonify(response_object)
+
+		# groupOwner belongs to its own group
+		query = 'INSERT INTO Belong (groupName, groupOwner, username) VALUES (%s, %s, %s)'
+		with conn.cursor() as cursor:
+			cursor.execute(query, (groupName, username, username))
+			conn.commit()
 		response_object['message'] = 'Group added!'
 
 	if (request.method == 'GET'):
 		username = request.args['username']
 		print(username)
 
-		query = 'SELECT * FROM CloseFriendGroup WHERE groupOwner = %s'
+		query = 'SELECT groupName, groupOwner FROM Belong WHERE username = %s'
 		try:
 			with conn.cursor() as cursor:
 				cursor.execute(query, username)
