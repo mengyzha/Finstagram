@@ -122,12 +122,19 @@ def all_photos():
 		# Problem: when username is null, have keyerror 
 		username = request.args['username']
 		if (username):
-			query = 'SELECT * FROM Photo WHERE photoOwner = %s ORDER BY timestamp'
+			# query = 'SELECT * FROM Photo WHERE photoOwner = %s ORDER BY timestamp'
+			query = '''SELECT DISTINCT * FROM Photo 
+			WHERE photoID IN 
+				(SELECT photoID FROM share NATURAL JOIN belong NATURAL JOIN Photo WHERE belong.username = %s) 
+			OR photoID IN 
+				(SELECT photoID FROM Follow JOIN Photo ON (Follow.followeeUsername = Photo.photoOwner) 
+				 WHERE followerUsername = %s AND acceptedFollow = true AND allFollowers = true)
+			ORDER BY timestamp DESC'''
 			# try:
 			cursor = conn.cursor()
 
 			# with conn.cursor() as cursor:
-			cursor.execute(query, username)
+			cursor.execute(query, (username, username))
 			photos = cursor.fetchall()
 			response_object['errno'] = 0
 			response_object['photos'] = photos
@@ -146,6 +153,7 @@ def follow():
 	response_object = {'status': 'success'}
 	cursor = conn.cursor()
 	if (request.method == 'POST'):
+		# Todo: can a person follow hisself?
 		post_data = request.get_json()
 		followerUsername = post_data.get('followerUsername')
 		followeeUsername = post_data.get('followeeUsername')
