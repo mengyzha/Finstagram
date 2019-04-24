@@ -90,12 +90,33 @@ def all_photos():
 		filePath = post_data.get('filePath')
 		caption = post_data.get('caption')
 		allFollowers = post_data.get('allFollowers')
+		groupName = post_data.get('groupName')
+		groupOwner = post_data.get('groupOwner')
+		print(groupName)
+		print(groupOwner)
 
 		# cursor used to send queries
 		ins = 'INSERT INTO Photo (photoOwner, timestamp, filePath, caption, allFollowers) VALUES (%s, %s, %s, %s, %s)'
 		with conn.cursor() as cursor:
 			cursor.execute(ins, (username, timestamp, filePath, caption, allFollowers))
-		# conn.commit()
+			conn.commit()
+
+		# if specifies a group
+		if (groupName):
+			# first find photoID
+			query = 'SELECT max(photoID) AS max_ID FROM Photo'
+			with conn.cursor() as cursor:
+				cursor.execute(query)
+				result = cursor.fetchone()
+			photoID = result['max_ID']
+			print(photoID)
+
+			# then insert into share
+			query = 'INSERT INTO Share (groupName, groupOwner, photoID) VALUES (%s, %s, %s)'
+			with conn.cursor() as cursor:
+				cursor.execute(query, (groupName, groupOwner, photoID))
+				conn.commit()
+
 		response_object['message'] = 'Photo added!'
 	else:
 		# Problem: when username is null, have keyerror 
@@ -135,6 +156,7 @@ def follow():
 		try:
 			with conn.cursor() as cursor:
 				cursor.execute(query, (followerUsername, followeeUsername, acceptedFollow))
+				conn.commit()
 			# conn.commit()
 			# cursor.close()
 		except Exception as error:
@@ -174,7 +196,7 @@ def follow():
 		try:
 			with conn.cursor() as cursor:
 				cursor.execute(query, (acceptedFollow, followerUsername, followeeUsername))
-			# conn.commit()
+				conn.commit()
 			# cursor.close()
 		except Exception as error:
 			conn.rollback()
@@ -193,7 +215,7 @@ def unfollow(follower_username, followee_username):
 	try:
 		with conn.cursor() as cursor:
 			cursor.execute(query, (follower_username, followee_username))
-		# conn.commit()
+			conn.commit()
 		# cursor.close()
 	except Exception as error:
 		conn.rollback()
@@ -220,7 +242,7 @@ def tag():
 		try:
 			with conn.cursor() as cursor:
 				cursor.execute(query, (username, photoID, acceptedTag))
-			# conn.commit()
+				conn.commit()
 			# cursor.close()
 		except Exception as error:
 			conn.rollback()
@@ -259,7 +281,7 @@ def tag():
 		try:
 			with conn.cursor() as cursor:
 				cursor.execute(query, (acceptedTag, username, photoID))
-			# conn.commit()
+				conn.commit()
 			# cursor.close()
 		except Exception as error:
 			conn.rollback()
@@ -281,7 +303,7 @@ def unTag(username, photo_id):
 	try:
 		with conn.cursor() as cursor:
 			cursor.execute(query, (username, photo_id))
-		# conn.commit()
+			conn.commit()
 		# cursor.close()
 	except Exception as error:
 		conn.rollback()
@@ -321,7 +343,7 @@ def all_groups():
 		try:
 			with conn.cursor() as cursor:
 				cursor.execute(query, (groupName, username))
-			# conn.commit()
+				conn.commit()
 			# cursor.close()
 		except Exception as error:
 		# Q: how to catch other errors? except pymysql.InternalError as error:
@@ -336,7 +358,7 @@ def all_groups():
 		username = request.args['username']
 		print(username)
 
-		query = 'SELECT groupName FROM CloseFriendGroup WHERE groupOwner = %s'
+		query = 'SELECT * FROM CloseFriendGroup WHERE groupOwner = %s'
 		try:
 			with conn.cursor() as cursor:
 				cursor.execute(query, username)
@@ -367,7 +389,7 @@ def addUser():
 	try:
 		with conn.cursor() as cursor:
 			cursor.execute(query, (groupName, groupOwner, username))
-		# conn.commit()
+			conn.commit()
 		# cursor.close()
 	except Exception as error:
 		conn.rollback()
@@ -403,7 +425,7 @@ def removeUser(group_name, group_owner, username):
 	try:
 		with conn.cursor() as cursor:
 			cursor.execute(query, (group_name, group_owner, username))
-		# conn.commit()
+			conn.commit()
 		# cursor.close()
 	except Exception as error:
 		conn.rollback()

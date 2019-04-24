@@ -83,6 +83,7 @@
         </b-form-group>
         <b-form-group>
           <b-form-select v-model="selected" :options="options"></b-form-select>
+          <!-- <div class="mt-3">Selected: <strong>{{ selected }}</strong></div> -->
         </b-form-group>
 
         <b-button type="submit" variant="primary">Post</b-button>
@@ -137,6 +138,7 @@ export default {
       message: '',
       showMessage: false,
       photos: [],
+      groups: [],
       postPhotoForm: {
         filePath: '',
         caption: '',
@@ -151,7 +153,7 @@ export default {
       tagPhotoID: '',
       selected: null,
       options: [
-        { value: null, text: 'Please select some item' },
+        { value: null, text: 'Please select a group to share' },
       ],
     };
   },
@@ -205,6 +207,7 @@ export default {
           console.log("successfully get groups");
           // console.log(res.data.message);
           console.log(res.data.groups);
+          this.groups = res.data.groups;
           this.constructOptions(res.data.groups);
         }).catch((error) => {
           // eslint-disable-next-line
@@ -213,7 +216,7 @@ export default {
     },
     constructOptions(groups) {
       for (let i = 0; i < groups.length; ++i) {
-        this.options.push({value: groups[i].groupName, text: groups[i].groupName});
+        this.options.push({value: i, text: groups[i].groupOwner + ': ' + groups[i].groupName});
         // console.log(i + groups[i].groupName);
       }
     },
@@ -287,12 +290,24 @@ export default {
       this.$refs.postPhotoModal.hide();
       let allFollowers = false;
       if (this.postPhotoForm.allFollowers[0]) allFollowers = true;
+      
+      let groupName = null, groupOwner = null;
+      if (this.selected != null) {
+        groupName = this.groups[this.selected].groupName;
+        groupOwner = this.groups[this.selected].groupOwner; 
+      }
+
+      console.log("Group Name: " + groupName);
+      console.log("Group owener: " + groupOwner);
       const payload = {
         username: localStorage.username,
         filePath: this.postPhotoForm.filePath,
         caption: this.postPhotoForm.caption,
         allFollowers,
+        groupName: groupName,
+        groupOwner: groupOwner,
       };
+
       this.addPhoto(payload);
       this.initForm();
     },

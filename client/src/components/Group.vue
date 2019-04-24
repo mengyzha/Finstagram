@@ -32,12 +32,14 @@
           <thead>
             <tr>
               <th scope="col">Group</th>
+              <th scope="col">Owner</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(group, index) in groups" :key="index">
               <td>{{ group.groupName }}</td>
+              <td>{{ group.groupOwner }}</td>
               <td>
                 <button type="button" v-b-modal.add-modal @click="setGroupName(group.groupName)" class="btn btn-success btn-sm">
                   Add User</button>
