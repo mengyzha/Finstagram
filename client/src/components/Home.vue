@@ -50,6 +50,7 @@
           <br><br>
           <button class="btn btn-outline-primary" @click="onClickFollow(photo.photoOwner)">Follow</button>
           <button class="btn btn-outline-primary" @click="onClickTag(photo.photoID)" v-b-modal.tag-modal>Tag</button>
+          <button class="btn btn-outline-primary" @click="onClickLike(photo.photoID)">Like</button>
           <!-- <b-link href="#" class="card-link">Follow</b-link>
           <b-link href="#" class="card-link">Tag</b-link>-->
         </b-card>
@@ -257,6 +258,16 @@ export default {
           console.log(error);
         });
     },
+    requestLike(params) {
+      const path = 'http://localhost:5000/like';
+      axios.post(path, params)
+        .then((res) => {
+          this.message = res.data.message;
+          this.showMessage = true;
+        }).catch((error) => {
+          console.log(error);
+        });
+    },
     tag() {
       const payload = {
         username: this.tagUserForm.username,
@@ -284,6 +295,13 @@ export default {
       console.log("Tag button clicked!");
       console.log("Photo ID: " + photoID);
       this.tagPhotoID = photoID;
+    },
+    onClickLike(photoID) {
+      const params = {
+        username: localStorage.username,
+        photoID: photoID,
+      };
+      this.requestLike(params);
     },
     onSubmitPost(evt) {
       evt.preventDefault();

@@ -449,6 +449,32 @@ def removeUser(group_name, group_owner, username):
 	response_object['message'] = 'User removed from the group'
 	return jsonify(response_object)
 
+@app.route('/like', methods = ['POST'])
+def likePhoto():
+	response_object = {'status': 'success'}
+	post_data = request.get_json()
+	username = post_data.get('username')
+	photoID = post_data.get('photoID')
+	timestamp = datetime.datetime.now()
+
+	query = 'INSERT INTO Liked (username, photoID, timestamp) VALUES (%s, %s, %s)'
+
+	try:
+		with conn.cursor() as cursor:
+			cursor.execute(query, (username, photoID, timestamp))
+			conn.commit()
+		message = 'Successfully liked the photo ' + str(photoID)
+	except Exception as error:
+		conn.rollback()
+		errno, message = error.args
+
+		if errno == 1062:
+			message = 'You have already liked this photo ' + str(photoID)
+
+	response_object['message'] = message
+	return jsonify(response_object)
+
+
 @app.route('/logout', methods = ['PUT'])
 def logout():
 	# session.pop('username')
