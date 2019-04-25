@@ -1,32 +1,46 @@
 <template>
   <div class="container">
-    <h1>{{ username }}: Welcome to Home</h1>
-    <br>
+    <!-- <h1>{{ username }}: Welcome to Home</h1> -->
+    <!-- <br> -->
 
-    <div>
-      <b-nav tabs>
-        <b-nav-item active>
-          <b-link to="/home">Home</b-link>
-        </b-nav-item>
-        <b-nav-item>
-          <b-link to="/follow">Follow Requests</b-link>
-        </b-nav-item>
-        <b-nav-item>
-          <b-link to="/tag">Tag Requests</b-link>
-        </b-nav-item>
-        <b-nav-item>
-          <b-link to="/group">My Groups</b-link>
-        </b-nav-item>
-      </b-nav>
-    </div>
+    <b-navbar toggleable="lg" type="dark" variant="info">
+      <b-navbar-brand href="/home">Finstagram</b-navbar-brand>
+
+      <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
+
+      <b-collapse id="nav-collapse" is-nav>
+        <b-navbar-nav>
+          <b-nav-item to="/follow">Follow Requests</b-nav-item>
+          <b-nav-item to="/tag">Tag Requests</b-nav-item>
+          <b-nav-item to="/group">My Groups</b-nav-item>
+        </b-navbar-nav>
+
+        <!-- Right aligned nav items -->
+        <b-navbar-nav class="ml-auto">
+          <b-nav-form>
+            <b-form-input size="sm" class="mr-sm-2" v-model="searchPoster" placeholder="Search by user"></b-form-input>
+            <b-button size="sm" class="my-2 my-sm-0" @click="search">Search</b-button>
+          </b-nav-form>
+
+          <b-nav-item-dropdown right>
+            <!-- Using 'button-content' slot -->
+            <template slot="button-content"><em>User</em></template>
+            <b-dropdown-item v-b-modal.post-modal >Post</b-dropdown-item>
+            <b-dropdown-item v-b-modal.follow-modal>Follow</b-dropdown-item>
+            <b-dropdown-item @click="logout">Sign Out</b-dropdown-item>
+          </b-nav-item-dropdown>
+        </b-navbar-nav>
+      </b-collapse>
+    </b-navbar>
+
     <br><br>
     <alert :message="message" v-if="showMessage"></alert>
 
-    <button type="button" v-b-modal.post-modal class="btn btn-success btn-sm">Post</button>
-    <button type="button" v-b-modal.follow-modal class="btn btn-success btn-sm">Follow</button>
-    <button type="button" @click="logout" class="btn btn-warning btn-sm">Logout</button>
-    <br>
-    <br>
+    <!-- <button type="button" v-b-modal.post-modal class="btn btn-success btn-sm">Post</button>
+    <button type="button" v-b-modal.follow-modal class="btn btn-success btn-sm">Follow</button> -->
+    <!-- <button type="button" @click="logout" class="btn btn-warning btn-sm">Logout</button> -->
+    <!-- <br>
+    <br> -->
 
     <div class="row">
       <!-- <div class="col-md-4 col-lg4" v-for="(photo, index) in photos" :key="index"> -->
@@ -140,6 +154,7 @@ export default {
       showMessage: false,
       photos: [],
       groups: [],
+      searchPoster: null,
       postPhotoForm: {
         filePath: '',
         caption: '',
@@ -232,6 +247,27 @@ export default {
           // eslint-disable-next-line
           console.log(error);
           this.getPhotos();
+        });
+    },
+    search() {
+      console.log("poster: " + this.searchPoster);
+      const params = {
+        username: localStorage.username,
+        poster: this.searchPoster,
+      };
+      console.log("username: " + params.username);
+      const path = 'http://localhost:5000/search';
+      axios.get(path, {params})
+        .then((res) => {
+          if (res.data.errno == 0) {
+            this.photos = res.data.photos;
+          } else {
+            this.message = res.data.errmsg;
+            this.showMessage = true;
+          }
+        }).catch((error) => {
+          // eslint-disable-next-line
+          console.log(error);
         });
     },
     logout() {

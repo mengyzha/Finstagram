@@ -148,10 +148,42 @@ def all_photos():
 	cursor.close()
 	return jsonify(response_object)
 
+@app.route('/search', methods = ['GET'])
+def searchByPoster():
+	if (request.method =='GET'):
+		response_object = {'status': 'success'}
+		# post_data = request.get_json()
+		username = request.args['username']
+		photoOwner = request.args['poster']
+		query = '''SELECT DISTINCT *
+				   FROM Photo
+				   WHERE photoOwner = %s
+				   AND (photoID IN
+				   		(SELECT photoID 
+						FROM share NATURAL JOIN belong NATURAL JOIN Photo
+						WHERE belong.username = %s) 
+						OR photoID IN 
+						(SELECT photoID
+						FROM Follow JOIN Photo ON (Follow.followeeUsername = Photo.photoOwner)
+						WHERE followerUsername = %s AND acceptedFollow = true AND allFollowers = true))
+				   ORDER BY timestamp DESC'''
+		try:
+			with conn.cursor() as cursor:
+				cursor.execute(query, (photoOwner, username, username))
+				photos = cursor.fetchall()
+			response_object['errno'] = 0
+			response_object['photos'] = photos
+		except Exception as error:
+			errno, errmsg = error.args
+			response_object['errno'] = errno
+			response_object['errmsg'] = errmsg
+	
+	return jsonify(response_object)
+
 @app.route('/follow', methods = ['GET','POST', 'PUT'])
 def follow():
 	response_object = {'status': 'success'}
-	cursor = conn.cursor()
+	# cursor = conn.cursor()
 	if (request.method == 'POST'):
 		# Todo: can a person follow hisself?
 		post_data = request.get_json()
