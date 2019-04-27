@@ -177,7 +177,6 @@
       <!-- <b-form-group>
         <b-button @click="onClickFollow" variant="outline-primary">Follow</b-button>
       </b-form-group> -->
-    <br>
 
     <!-- <pre class="mt-3 mb-0">{{ text }}</pre> -->
 
