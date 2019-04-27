@@ -246,24 +246,54 @@ def follow():
 		response_object['message'] = 'Follow Updated!'
 		return jsonify(response_object)
 
+@app.route('/following', methods = ['GET'])
+def getFollowingList():
+	response_object = {'status': 'success'}
+	followerUsername = request.args['username']
+	query = 'SELECT followeeUsername FROM Follow WHERE followerUsername = %s AND acceptedfollow = 1'
+	with conn.cursor() as cursor:
+		cursor.execute(query, followerUsername)
+		followingList = cursor.fetchall()
+	response_object['followings'] = followingList
+	return jsonify(response_object)
+
 @app.route('/unfollow/<follower_username>/<followee_username>', methods = ['DELETE'])
 def unfollow(follower_username, followee_username):
 	response_object = {'status': 'success'}
-	# cursor = conn.cursor()
-	query = 'DELETE FROM Follow WHERE followerUsername = %s AND followeeUsername = %s'
 
 	try:
 		with conn.cursor() as cursor:
+
+			# 1. delete tags follower was tagged in followee's photo that follower follows
+			query = '''DELETE FROM Tag 
+						WHERE username = %s 
+						AND photoID in 
+							(SELECT photoID FROM Follow JOIN Photo ON (Follow.followeeUsername = Photo.photoOwner) 
+				 			WHERE followerUsername = %s AND followeeUsername = %s AND acceptedFollow = true AND allFollowers = true)
+						AND acceptedTag = 1'''
+			cursor.execute(query, (follower_username, follower_username, followee_username))
+
+			# 2. delete comments follower made for followee's photos that follower follows	
+			query = '''DELETE FROM Comment 
+						WHERE username = %s
+						AND photoID in 
+							(SELECT photoID FROM Follow JOIN Photo ON (Follow.followeeUsername = Photo.photoOwner) 
+				 			WHERE followerUsername = %s AND followeeUsername = %s AND acceptedFollow = true AND allFollowers = true)'''
+			cursor.execute(query, (follower_username, follower_username, followee_username))
+
+			# then delete follower from Follow table
+			query = 'DELETE FROM Follow WHERE followerUsername = %s AND followeeUsername = %s'
 			cursor.execute(query, (follower_username, followee_username))
+
 			conn.commit()
-		# cursor.close()
 	except Exception as error:
 		conn.rollback()
 		errno, errmsg = error.args
 		response_object['message'] = errmsg
 		return jsonify(response_object)
 	
-	response_object['message'] = 'Follow Request refused'
+
+	response_object['message'] = 'Successfully unfollowed user ' + followee_username
 	return jsonify(response_object)
 
 @app.route('/tag', methods = ['POST', 'GET', 'PUT'])

@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <!-- <h1>{{ username }}: Welcome to Home</h1> -->
+    <h1>Welcome to Home: {{ username }}</h1>
     <!-- <br> -->
 
     <b-navbar toggleable="lg" type="dark" variant="info">
@@ -13,6 +13,7 @@
           <b-nav-item to="/follow">Follow Requests</b-nav-item>
           <b-nav-item to="/tag">Tag Requests</b-nav-item>
           <b-nav-item to="/group">My Groups</b-nav-item>
+          <b-nav-item to="/following">Following</b-nav-item>
         </b-navbar-nav>
 
         <!-- Right aligned nav items -->
@@ -55,16 +56,14 @@
           @click="onClickPhoto(index)"
         >
           <b-card-img :src="photo.filePath" alt="Image" top v-b-modal.photo-modal></b-card-img>
-          <b-card-text>{{photo.caption}}</b-card-text>
+          <b-card-text v-if="photo.caption != null">{{photo.caption}}</b-card-text>
           <br>
-          <b-card-text
-            class="small text-muted"
-          >{{photo.photoID}} posted at {{photo.timestamp}}</b-card-text>
+          <b-card-text class="small text-muted">{{photo.photoID}} posted at {{photo.timestamp}}</b-card-text>
           <br><br>
-          <button class="btn btn-outline-primary" @click="onClickFollow(photo.photoOwner)">Follow</button>
-          <button class="btn btn-outline-primary" @click="onClickTag(photo.photoID)" v-b-modal.tag-modal>Tag</button>
-          <button class="btn btn-outline-primary" @click="onClickLike(photo.photoID)">Like</button>
-          <button class="btn btn-outline-primary" @click="onClickComment(photo.photoID)" v-b-modal.comment-modal>Comment</button>
+          <!-- <button class="btn btn-outline-primary" @click="onClickFollow(photo.photoOwner)">Follow</button> -->
+          <b-button variant="outline-primary" size="sm" @click="onClickLike(photo.photoID)">Like</b-button>
+          <b-button variant="outline-secondary" size="sm" @click="onClickTag(photo.photoID)" v-b-modal.tag-modal>Tag</b-button>
+          <b-button variant="info" size="sm" @click="onClickComment(photo.photoID)" v-b-modal.comment-modal>Comment</b-button>
         </b-card>
       </b-card-group>
       <!-- </div> -->
@@ -148,7 +147,7 @@
             placeholder="Enter the username"
           ></b-form-input>
         </b-form-group>
-        <b-button type="submit" @click="tag" variant="primary">Tag</b-button>
+        <b-button type="submit" variant="primary">Tag</b-button>
         <b-button type="reset" variant="danger">Cancel</b-button>
       </b-form>
     </b-modal>
@@ -174,6 +173,10 @@
       >
         <b-form-text id="comment-text" v-for="(comment, index) in comments" :key="index">{{comment.username + ": " + comment.commentText}}</b-form-text>
       </b-form-group>
+
+      <!-- <b-form-group>
+        <b-button @click="onClickFollow" variant="outline-primary">Follow</b-button>
+      </b-form-group> -->
     <br>
 
     <!-- <pre class="mt-3 mb-0">{{ text }}</pre> -->
@@ -358,6 +361,7 @@ export default {
         });
     },
     tag() {
+      console.log("tag button in form clicked");
       const payload = {
         username: this.tagUserForm.username,
         photoID: this.tagPhotoID,
@@ -372,10 +376,11 @@ export default {
           console.log(error);
         });
     },
-    onClickFollow(username) {
+    onClickFollow() {
+      console.log("follow button clicked");
       const params = {
         followerUsername: localStorage.username,
-        followeeUsername: username,
+        followeeUsername: this.clickedPhoto.photoOwner,
       };
       this.requestFollow(params);
     },
@@ -448,6 +453,7 @@ export default {
     onSubmitTag(evt) {
       evt.preventDefault();
       this.$refs.tagUserModal.hide();
+      this.tag();
       this.initForm();
 
       // check

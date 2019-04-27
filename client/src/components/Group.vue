@@ -19,13 +19,15 @@
             <b-nav-item active>
               <b-link to="/group">My Groups</b-link>
             </b-nav-item>
+            <b-nav-item>
+              <b-link to="/following">Following</b-link>
+            </b-nav-item>
           </b-nav>
         </div>
         <br>
         <alert :message="message" v-if="showMessage"></alert>
 
-        <button type="button" v-b-modal.add-group-modal class="btn btn-success btn-sm">
-          Add Group</button>
+        <b-button v-b-modal.add-group-modal variant="primary">Add Group</b-button>
         <br>
         <br>
         <table class="table table-hover">
@@ -41,15 +43,9 @@
               <td>{{ group.groupName }}</td>
               <td>{{ group.groupOwner }}</td>
               <td v-if="group.groupOwner === username">
-                <button type="button" v-b-modal.add-modal @click="setGroupName(group.groupName)" class="btn btn-success btn-sm">
-                  Add User</button>
-                <button
-                  type="button"
-                  v-b-modal.remove-modal
-                  @click="setGroupName(group.groupName)"
-                  class="btn btn-warning btn-sm"
-                >Remove User</button>
-                <button type="button" @click="setGroupName(group.groupName)" class="btn btn-danger btn-sm">Remove Group</button>
+                <b-button v-b-modal.add-modal @click="setGroupName(group.groupName)" variant="success" size="sm">Add User</b-button>
+                <b-button v-b-modal.remove-modal @click="setGroupName(group.groupName)" variant="warning" size="sm">Remove User</b-button>
+                <b-button @click="setGroupName(group.groupName)" variant="danger" size="sm">Remove Group</b-button>
               </td>
             </tr>
           </tbody>

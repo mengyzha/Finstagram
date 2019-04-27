@@ -19,6 +19,9 @@
             <b-nav-item>
               <b-link to="/group">My Groups</b-link>
             </b-nav-item>
+            <b-nav-item>
+              <b-link to="/following">Following</b-link>
+            </b-nav-item>
           </b-nav>
         </div>
         <br>
@@ -28,12 +31,9 @@
         <table class="table table-hover">
           <thead>
             <tr>
-              <th scope="col">Username</th>
+              <th scope="col">Follower</th>
               <th scope="col">Accepted?</th>
-              <th></th>
-              <th></th>
-              <th></th>
-              <th></th>
+              <th scope="col"></th>
               <th></th>
             </tr>
           </thead>
@@ -42,14 +42,9 @@
               <td>{{ follower.followerUsername }}</td>
               <td>{{ follower.acceptedfollow ? 'Yes' : 'No' }}</td>
               <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
               <td>
-                <button type="button" @click="onAcceptFollow(follower.followerUsername)" class="btn btn-success btn-sm">
-                  Accept</button>
-                <button type="button" @click="onDeclineFollow(follower.followerUsername)" class="btn btn-danger btn-sm">
-                  Decline</button>
+                <b-button variant="success" size="sm" v-if="!follower.acceptedfollow" @click="onAcceptFollow(follower.followerUsername)">Accept</b-button>
+                <b-button variant="danger" size="sm" v-if="!follower.acceptedfollow" @click="onDeclineFollow(follower.followerUsername)">Decline</b-button>
               </td>
             </tr>
           </tbody>
