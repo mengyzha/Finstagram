@@ -4,14 +4,15 @@
       <template slot="header">Finstagram</template>
 
       <template slot="lead">
-        This is a simple hero unit, a simple jumbotron-style component for calling extra attention to
-        featured content or information.
+        Finstagram, a web application for sharing photos. Finstagram gives users more privacy than many photo sharing sites by giving them more detailed control over who can see which photos they post
       </template>
 
       <hr class="my-4">
 
       <p>
-        It uses utility classes for typography and spacing to space content out within the larger
+        Users are able to log in, post photos, view the photos posted by others (public
+        photos, photos posted by people they are following, and close friends, detailed below), tag
+        photos items with handles of people, etc. 
         container.
       </p>
 
@@ -155,7 +156,11 @@ export default {
       const path = 'http://localhost:5000/register';
       axios.post(path, payload)
         .then((res) => {
-          router.push({name: 'Login'});
+          // if (res.data.errno == 0) {
+          //   router.push({name: 'Login'});
+          // }
+          this.message = res.data.message;
+          this.showMessage = true;
         }).catch((error) => {
           // eslint-disable-next-line
           console.error(error);
