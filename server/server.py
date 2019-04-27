@@ -275,7 +275,14 @@ def tag():
 		username = post_data.get('username')
 		photoID = post_data.get('photoID')
 		acceptedTag = False
-		print(photoID)
+
+		query = 'SELECT photoOwner FROM Photo WHERE photoID = %s'
+		with conn.cursor() as cursor:
+			cursor.execute(query, photoID)
+			photoOwner = cursor.fetchone()['photoOwner']
+
+		if (photoOwner == username):
+			acceptedTag = True
 
 		query = 'INSERT INTO Tag (username, photoID, acceptedTag) VALUES (%s, %s, %s)'
 		
@@ -359,12 +366,13 @@ def unTag(username, photo_id):
 def getTagList():
 	response_object = {'status': 'success'}
 	photoID = request.args['photoID']
-	query = 'SELECT username FROM Tag WHERE photoID = %s AND acceptedTag = 1'
+	query = 'SELECT fname, lname FROM Tag NATURAL JOIN Person WHERE photoID = %s AND acceptedTag = 1'
+	print(photoID)
 
 	# cursor = conn.cursor()
 	with conn.cursor() as cursor:
 		cursor.execute(query, photoID)
-	results = cursor.fetchall()
+		results = cursor.fetchall()
 	response_object['tagees'] = results;
 	return jsonify(response_object)
 
@@ -505,6 +513,41 @@ def likePhoto():
 
 	response_object['message'] = message
 	return jsonify(response_object)
+
+@app.route('/comment', methods = ['GET', 'POST'])
+def comment():
+	response_object = {'status': 'success'}
+	if (request.method == 'POST'):
+		post_data = request.get_json()
+		username = post_data.get('username')
+		photoID = post_data.get('photoID')
+		commentText = post_data.get('commentText')
+		timestamp = datetime.datetime.now()
+
+		query = 'INSERT INTO Comment (username, photoID, commentText, timestamp) VALUES (%s, %s, %s, %s)'
+
+		try:
+			with conn.cursor() as cursor:
+				cursor.execute(query, (username, photoID, commentText, timestamp))
+				conn.commit()
+			response_object['message'] = 'Comment photo ' + str(photoID) + ' Successfully'
+		except Exception as error:
+			errno, errmsg = error.args
+			response_object['message'] = errmsg
+
+		return jsonify(response_object)
+
+	if (request.method == 'GET'):
+		photoID = request.args['photoID']
+		# Todo: only follower can see comments
+		query = 'SELECT * FROM Comment WHERE photoID = %s ORDER BY timestamp'
+		with conn.cursor() as cursor:
+			cursor.execute(query, photoID)
+			comments = cursor.fetchall()
+		response_object['comments'] = comments
+
+		return jsonify(response_object)
+
 
 
 @app.route('/logout', methods = ['PUT'])

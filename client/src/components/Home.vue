@@ -49,13 +49,12 @@
           v-for="(photo, index) in photos"
           :key="index"
           :title="photo.photoOwner"
-          :img-src="photo.filePath"
-          img-alt="Image"
-          img-top
           tag="article"
           style="max-width: 20rem;"
           class="mb-2"
+          @click="onClickPhoto(index)"
         >
+          <b-card-img :src="photo.filePath" alt="Image" top v-b-modal.photo-modal></b-card-img>
           <b-card-text>{{photo.caption}}</b-card-text>
           <br>
           <b-card-text
@@ -65,12 +64,28 @@
           <button class="btn btn-outline-primary" @click="onClickFollow(photo.photoOwner)">Follow</button>
           <button class="btn btn-outline-primary" @click="onClickTag(photo.photoID)" v-b-modal.tag-modal>Tag</button>
           <button class="btn btn-outline-primary" @click="onClickLike(photo.photoID)">Like</button>
-          <!-- <b-link href="#" class="card-link">Follow</b-link>
-          <b-link href="#" class="card-link">Tag</b-link>-->
+          <button class="btn btn-outline-primary" @click="onClickComment(photo.photoID)" v-b-modal.comment-modal>Comment</button>
         </b-card>
       </b-card-group>
       <!-- </div> -->
     </div>
+
+    <b-modal ref="commentModal" id="comment-modal" title="Add Comment" hide-footer>
+      <b-form @submit="onSubmitComment" @reset="onCancelComment" class="w-100">
+        <b-form-group id="form-path-group">
+          <b-form-textarea
+            id="textcomment"
+            v-model="commentForm.comment"
+            placeholder="Add comment..."
+            rows="3"
+            max-rows="6"
+          ></b-form-textarea>
+        </b-form-group>
+
+        <b-button type="submit" variant="primary">Comment</b-button>
+        <b-button type="reset" variant="danger">Cancel</b-button>
+      </b-form>
+    </b-modal>
 
     <b-modal ref="postPhotoModal" id="post-modal" title="Post a new photo" hide-footer>
       <b-form @submit="onSubmitPost" @reset="onCancelPost" class="w-100">
@@ -137,6 +152,33 @@
         <b-button type="reset" variant="danger">Cancel</b-button>
       </b-form>
     </b-modal>
+
+    <b-modal ref="photoModal" id="photo-modal" :title="clickedPhoto.photoOwner">
+      <b-form-group>
+        <b-img :src="clickedPhoto.filePath" fluid alt="Responsive image"></b-img>
+      </b-form-group>
+
+      <b-form-group
+        label="Tagged by"
+        label-for="tagee-text"
+        v-if="tagees.length > 0"
+      >
+        <b-form-text id="tagee-text" v-for="(tagee, index) in tagees" :key="index">{{ tagee.fname + " " + tagee.lname}}</b-form-text>
+      </b-form-group>
+
+      <b-form-group
+        id="comment-group"
+        label="Comments"
+        label-for="comment-text"
+        v-if="comments.length > 0"
+      >
+        <b-form-text id="comment-text" v-for="(comment, index) in comments" :key="index">{{comment.username + ": " + comment.commentText}}</b-form-text>
+      </b-form-group>
+    <br>
+
+    <!-- <pre class="mt-3 mb-0">{{ text }}</pre> -->
+
+    </b-modal>
   </div>
 </template>
 
@@ -149,12 +191,19 @@ export default {
   name: 'Home',
   data() {
     return {
+      // text: '',
       username: '',
       message: '',
       showMessage: false,
       photos: [],
       groups: [],
+      tagees: [],
+      comments: [],
       searchPoster: null,
+      clickedPhoto: {
+        filePath: '',
+        photoOwner: '',
+      },
       postPhotoForm: {
         filePath: '',
         caption: '',
@@ -166,7 +215,11 @@ export default {
       tagUserForm: {
         username: '',
       },
+      commentForm: {
+        comment: '',
+      },
       tagPhotoID: '',
+      commentPhotoID: '',
       selected: null,
       options: [
         { value: null, text: 'Please select a group to share' },
@@ -316,7 +369,6 @@ export default {
           this.showMessage = true;
         }).catch((error) => {
           // eslint-disable-next-line
-
           console.log(error);
         });
     },
@@ -376,6 +428,7 @@ export default {
       this.postPhotoForm.allFollowers = [];
       this.followUserForm.username = '';
       this.tagUserForm.username = '';
+      this.commentForm.comment = '';
     },
     onSubmitFollow(evt) {
       evt.preventDefault();
@@ -406,6 +459,69 @@ export default {
       evt.preventDefault();
       this.$refs.tagUserModal.hide();
       this.initForm();
+    },
+    onClickComment(photoID) {
+      this.commentPhotoID = photoID;
+    }, 
+    comment(params) {
+      const path = 'http://localhost:5000/comment';
+      axios.post(path, params)
+        .then((res) => {
+          this.message = res.data.message;
+          this.showMessage = true;
+        }).catch((error) => {
+
+        });
+    },
+    onSubmitComment(evt) {
+      evt.preventDefault();
+      this.$refs.commentModal.hide();
+      const params = {
+        username: localStorage.username,
+        photoID: this.commentPhotoID,
+        commentText: this.commentForm.comment,
+      };
+      this.comment(params);
+      this.initForm();
+    },
+    onCancelComment(evt) {
+      evt.preventDefault();
+      this.$refs.commentModal.hide();
+      this.initForm();
+    },
+    onClickPhoto(index) {
+      this.clickedPhoto = this.photos[index];
+      console.log("Photo: " + this.photos[index].photoID + " is clicked!");
+      this.requestTagees(this.photos[index].photoID);
+      setTimeout(() => {
+        this.requestComments(this.clickedPhoto.photoID);
+      }, 500);
+    },
+    requestTagees(photoID) {
+      const path = 'http://localhost:5000/taglist';
+      const params = {
+        photoID: photoID,
+      };
+      axios.get(path, {params})
+        .then((res) => {
+          this.tagees = res.data.tagees;
+        }).catch((error) => {
+          // eslint-disable-next-line
+          console.log(error);
+        });
+    },
+    requestComments(photoID) {
+      const path = 'http://localhost:5000/comment';
+      const params = {
+        photoID: photoID,
+      };
+      axios.get(path, {params})
+        .then((res) => {
+          this.comments = res.data.comments;
+        }).catch((error) => {
+          // eslint-disable-next-line
+          console.log(error);
+        });
     },
   },
 };
