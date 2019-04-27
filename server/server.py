@@ -3,6 +3,7 @@ from flask import Flask, jsonify, request, session
 from flask_cors import CORS
 import pymysql.cursors
 import datetime
+import hashlib
 # import pymysql.err
 # from flask_session import Session
 
@@ -35,15 +36,18 @@ def login():
 	post_data = request.get_json()
 	# cursor = conn.cursor()
 	query = 'SELECT * FROM Person WHERE username = %s and password = %s'
-	print(post_data.get('username'))
-	print(post_data.get('password'))
+	password = post_data.get('password')
+	hashedPassword = hashlib.sha256(password.encode("utf-8")).hexdigest()
+	print(hashedPassword)
 	try:
 		with conn.cursor() as cursor:
-			cursor.execute(query, (post_data.get('username'), post_data.get('password')))	
-		# cursor.execute(query, (post_data.get('username'), post_data.get('password')))
-		data = cursor.fetchone()
-		# cursor.close()
-	# except pymysql.err.InternalError as error:
+			cursor.execute(query, (post_data.get('username'), hashedPassword))	
+			data = cursor.fetchone()
+			if (data):
+				response_object['errno'] = 0
+			else:
+				response_object['errno'] = 401
+				response_object['errmsg'] = 'Invalid username or password'
 	except Exception as error:
 		print(error.args)
 		errmsg = error.args
@@ -51,11 +55,7 @@ def login():
 		response_object['errmsg'] = errmsg
 		return jsonify(response_object)
 
-	if (data):
-		response_object['errno'] = 0
-	else:
-		response_object['errno'] = 401
-		response_object['errmsg'] = 'Invalid login or username'
+	
 	return jsonify(response_object) 
 
 
@@ -63,18 +63,25 @@ def login():
 def register():
 	response_object = {'status': 'success'}
 	post_data = request.get_json()
-	# cursor = conn.cursor()
+	plaintextPassword = post_data.get('password')
+	hashedPassword = hashlib.sha256(plaintextPassword.encode("utf-8")).hexdigest()
+	print(hashedPassword)
 	query = 'INSERT INTO Person VALUES (%s, %s, %s, %s, %s, %s, %s)'
-	with conn.cursor() as cursor:
-		cursor.execute(query, (post_data.get('username'),
-			post_data.get('password'),
-			post_data.get('fName'),
-			post_data.get('lName'),
-			post_data.get('avatar'),
-			post_data.get('bio'),
-			post_data.get('isPrivate')))
-	# cursor.close()
-	response_object['message'] = 'Person registered'
+	try:
+		with conn.cursor() as cursor:
+			cursor.execute(query, (post_data.get('username'),
+				hashedPassword,
+				post_data.get('fName'),
+				post_data.get('lName'),
+				post_data.get('avatar'),
+				post_data.get('bio'),
+				post_data.get('isPrivate')))
+			conn.commit()
+		response_object['errno'] = 0
+		response_object['message'] = 'Registered Successfully! Please login into your account'
+	except Exception as error:
+		errno, errmsg = error.args
+		response_object['message'] = errmsg
 	return jsonify(response_object)
 
 # sanity check route
