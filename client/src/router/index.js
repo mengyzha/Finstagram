@@ -5,6 +5,7 @@ import Follow from '@/components/Follow';
 import Tag from '@/components/Tag';
 import Group from '@/components/Group';
 import Login from '@/components/Login';
+import Friend from '@/components/Friend'
 
 Vue.use(Router);
 
@@ -34,6 +35,11 @@ export default new Router({
       path: '/group',
       name: 'Group',
       component: Group,
+    },
+    {
+      path: '/following',
+      name: 'Friend',
+      component: Friend,
     },
   ],
   mode: 'history',

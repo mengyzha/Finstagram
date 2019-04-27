@@ -19,6 +19,9 @@
             <b-nav-item>
               <b-link to="/group">My Groups</b-link>
             </b-nav-item>
+            <b-nav-item>
+              <b-link to="/following">Following</b-link>
+            </b-nav-item>
           </b-nav>
         </div>
         <br>
@@ -43,10 +46,8 @@
               <td>{{ tagRequest.photoID }}</td>
               <td>{{ tagRequest.acceptedTag ? "Yes" : "No"}}</td>
               <td>
-                <button type="button" @click="onAcceptTag(tagRequest.photoID)" class="btn btn-success btn-sm">
-                  Accept</button>
-                <button type="button" @click="onDeclineTag(tagRequest.photoID)" class="btn btn-danger btn-sm">
-                  Decline</button>
+                <b-button variant="success" size="sm" v-if="!tagRequest.acceptedTag" @click="onAcceptTag(tagRequest.photoID)">Accept</b-button>
+                <b-button variant="danger" size="sm" v-if="!tagRequest.acceptedTag" @click="onDeclineTag(tagRequest.photoID)">Decline</b-button>
               </td>
             </tr>
           </tbody>

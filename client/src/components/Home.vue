@@ -1,32 +1,47 @@
 <template>
   <div class="container">
-    <h1>{{ username }}: Welcome to Home</h1>
-    <br>
+    <h1>Welcome to Home: {{ username }}</h1>
+    <!-- <br> -->
 
-    <div>
-      <b-nav tabs>
-        <b-nav-item active>
-          <b-link to="/home">Home</b-link>
-        </b-nav-item>
-        <b-nav-item>
-          <b-link to="/follow">Follow Requests</b-link>
-        </b-nav-item>
-        <b-nav-item>
-          <b-link to="/tag">Tag Requests</b-link>
-        </b-nav-item>
-        <b-nav-item>
-          <b-link to="/group">My Groups</b-link>
-        </b-nav-item>
-      </b-nav>
-    </div>
+    <b-navbar toggleable="lg" type="dark" variant="info">
+      <b-navbar-brand href="/home">Finstagram</b-navbar-brand>
+
+      <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
+
+      <b-collapse id="nav-collapse" is-nav>
+        <b-navbar-nav>
+          <b-nav-item to="/follow">Follow Requests</b-nav-item>
+          <b-nav-item to="/tag">Tag Requests</b-nav-item>
+          <b-nav-item to="/group">My Groups</b-nav-item>
+          <b-nav-item to="/following">Following</b-nav-item>
+        </b-navbar-nav>
+
+        <!-- Right aligned nav items -->
+        <b-navbar-nav class="ml-auto">
+          <b-nav-form>
+            <b-form-input size="sm" class="mr-sm-2" v-model="searchPoster" placeholder="Search by user"></b-form-input>
+            <b-button size="sm" class="my-2 my-sm-0" @click="search">Search</b-button>
+          </b-nav-form>
+
+          <b-nav-item-dropdown right>
+            <!-- Using 'button-content' slot -->
+            <template slot="button-content"><em>User</em></template>
+            <b-dropdown-item v-b-modal.post-modal >Post</b-dropdown-item>
+            <b-dropdown-item v-b-modal.follow-modal>Follow</b-dropdown-item>
+            <b-dropdown-item @click="logout">Sign Out</b-dropdown-item>
+          </b-nav-item-dropdown>
+        </b-navbar-nav>
+      </b-collapse>
+    </b-navbar>
+
     <br><br>
     <alert :message="message" v-if="showMessage"></alert>
 
-    <button type="button" v-b-modal.post-modal class="btn btn-success btn-sm">Post</button>
-    <button type="button" v-b-modal.follow-modal class="btn btn-success btn-sm">Follow</button>
-    <button type="button" @click="logout" class="btn btn-warning btn-sm">Logout</button>
-    <br>
-    <br>
+    <!-- <button type="button" v-b-modal.post-modal class="btn btn-success btn-sm">Post</button>
+    <button type="button" v-b-modal.follow-modal class="btn btn-success btn-sm">Follow</button> -->
+    <!-- <button type="button" @click="logout" class="btn btn-warning btn-sm">Logout</button> -->
+    <!-- <br>
+    <br> -->
 
     <div class="row">
       <!-- <div class="col-md-4 col-lg4" v-for="(photo, index) in photos" :key="index"> -->
@@ -35,27 +50,41 @@
           v-for="(photo, index) in photos"
           :key="index"
           :title="photo.photoOwner"
-          :img-src="photo.filePath"
-          img-alt="Image"
-          img-top
           tag="article"
           style="max-width: 20rem;"
           class="mb-2"
+          @click="onClickPhoto(index)"
         >
-          <b-card-text>{{photo.caption}}</b-card-text>
+          <b-card-img :src="photo.filePath" alt="Image" top v-b-modal.photo-modal></b-card-img>
+          <b-card-text v-if="photo.caption != null">{{photo.caption}}</b-card-text>
           <br>
-          <b-card-text
-            class="small text-muted"
-          >{{photo.photoID}} posted at {{photo.timestamp}}</b-card-text>
+          <b-card-text class="small text-muted">{{photo.photoID}} posted at {{photo.timestamp}}</b-card-text>
           <br><br>
-          <button class="btn btn-outline-primary" @click="onClickFollow(photo.photoOwner)">Follow</button>
-          <button class="btn btn-outline-primary" @click="onClickTag(photo.photoID)" v-b-modal.tag-modal>Tag</button>
-          <!-- <b-link href="#" class="card-link">Follow</b-link>
-          <b-link href="#" class="card-link">Tag</b-link>-->
+          <!-- <button class="btn btn-outline-primary" @click="onClickFollow(photo.photoOwner)">Follow</button> -->
+          <b-button variant="outline-primary" size="sm" @click="onClickLike(photo.photoID)">Like</b-button>
+          <b-button variant="outline-secondary" size="sm" @click="onClickTag(photo.photoID)" v-b-modal.tag-modal>Tag</b-button>
+          <b-button variant="info" size="sm" @click="onClickComment(photo.photoID)" v-b-modal.comment-modal>Comment</b-button>
         </b-card>
       </b-card-group>
       <!-- </div> -->
     </div>
+
+    <b-modal ref="commentModal" id="comment-modal" title="Add Comment" hide-footer>
+      <b-form @submit="onSubmitComment" @reset="onCancelComment" class="w-100">
+        <b-form-group id="form-path-group">
+          <b-form-textarea
+            id="textcomment"
+            v-model="commentForm.comment"
+            placeholder="Add comment..."
+            rows="3"
+            max-rows="6"
+          ></b-form-textarea>
+        </b-form-group>
+
+        <b-button type="submit" variant="primary">Comment</b-button>
+        <b-button type="reset" variant="danger">Cancel</b-button>
+      </b-form>
+    </b-modal>
 
     <b-modal ref="postPhotoModal" id="post-modal" title="Post a new photo" hide-footer>
       <b-form @submit="onSubmitPost" @reset="onCancelPost" class="w-100">
@@ -83,6 +112,7 @@
         </b-form-group>
         <b-form-group>
           <b-form-select v-model="selected" :options="options"></b-form-select>
+          <!-- <div class="mt-3">Selected: <strong>{{ selected }}</strong></div> -->
         </b-form-group>
 
         <b-button type="submit" variant="primary">Post</b-button>
@@ -117,9 +147,39 @@
             placeholder="Enter the username"
           ></b-form-input>
         </b-form-group>
-        <b-button type="submit" @click="tag" variant="primary">Tag</b-button>
+        <b-button type="submit" variant="primary">Tag</b-button>
         <b-button type="reset" variant="danger">Cancel</b-button>
       </b-form>
+    </b-modal>
+
+    <b-modal ref="photoModal" id="photo-modal" :title="clickedPhoto.photoOwner">
+      <b-form-group>
+        <b-img :src="clickedPhoto.filePath" fluid alt="Responsive image"></b-img>
+      </b-form-group>
+
+      <b-form-group
+        label="Tagged by"
+        label-for="tagee-text"
+        v-if="tagees.length > 0"
+      >
+        <b-form-text id="tagee-text" v-for="(tagee, index) in tagees" :key="index">{{ tagee.fname + " " + tagee.lname}}</b-form-text>
+      </b-form-group>
+
+      <b-form-group
+        id="comment-group"
+        label="Comments"
+        label-for="comment-text"
+        v-if="comments.length > 0"
+      >
+        <b-form-text id="comment-text" v-for="(comment, index) in comments" :key="index">{{comment.username + ": " + comment.commentText}}</b-form-text>
+      </b-form-group>
+
+      <!-- <b-form-group>
+        <b-button @click="onClickFollow" variant="outline-primary">Follow</b-button>
+      </b-form-group> -->
+
+    <!-- <pre class="mt-3 mb-0">{{ text }}</pre> -->
+
     </b-modal>
   </div>
 </template>
@@ -133,10 +193,19 @@ export default {
   name: 'Home',
   data() {
     return {
+      // text: '',
       username: '',
       message: '',
       showMessage: false,
       photos: [],
+      groups: [],
+      tagees: [],
+      comments: [],
+      searchPoster: null,
+      clickedPhoto: {
+        filePath: '',
+        photoOwner: '',
+      },
       postPhotoForm: {
         filePath: '',
         caption: '',
@@ -148,10 +217,14 @@ export default {
       tagUserForm: {
         username: '',
       },
+      commentForm: {
+        comment: '',
+      },
       tagPhotoID: '',
+      commentPhotoID: '',
       selected: null,
       options: [
-        { value: null, text: 'Please select some item' },
+        { value: null, text: 'Please select a group to share' },
       ],
     };
   },
@@ -166,7 +239,11 @@ export default {
     }
 
     this.getPhotos();
-    // this.getGroups();
+    
+    // single thread, we only have one connection
+    setTimeout(()=> {
+      this.getGroups();
+    }, 1000);
   },
   methods: {
     getPhotos() {
@@ -198,18 +275,20 @@ export default {
       };
       axios.get(path, {params})
         .then((res) => {
-          console.log(res.data.message);
+          console.log("successfully get groups");
+          // console.log(res.data.message);
           console.log(res.data.groups);
+          this.groups = res.data.groups;
           this.constructOptions(res.data.groups);
         }).catch((error) => {
           // eslint-disable-next-line
-          console.log(res.data.status);
+          console.log(error);
         });
     },
     constructOptions(groups) {
-      for (i = 0; i < groups.length; ++i) {
-        this.options.push({value: groups[i].groupName, text: groups[i].groupName});
-        console.log(groups[i].groupName + " " + groups[i].groupName);
+      for (let i = 0; i < groups.length; ++i) {
+        this.options.push({value: i, text: groups[i].groupOwner + ': ' + groups[i].groupName});
+        // console.log(i + groups[i].groupName);
       }
     },
     addPhoto(payload) {
@@ -223,6 +302,27 @@ export default {
           // eslint-disable-next-line
           console.log(error);
           this.getPhotos();
+        });
+    },
+    search() {
+      console.log("poster: " + this.searchPoster);
+      const params = {
+        username: localStorage.username,
+        poster: this.searchPoster,
+      };
+      console.log("username: " + params.username);
+      const path = 'http://localhost:5000/search';
+      axios.get(path, {params})
+        .then((res) => {
+          if (res.data.errno == 0) {
+            this.photos = res.data.photos;
+          } else {
+            this.message = res.data.errmsg;
+            this.showMessage = true;
+          }
+        }).catch((error) => {
+          // eslint-disable-next-line
+          console.log(error);
         });
     },
     logout() {
@@ -249,7 +349,18 @@ export default {
           console.log(error);
         });
     },
+    requestLike(params) {
+      const path = 'http://localhost:5000/like';
+      axios.post(path, params)
+        .then((res) => {
+          this.message = res.data.message;
+          this.showMessage = true;
+        }).catch((error) => {
+          console.log(error);
+        });
+    },
     tag() {
+      console.log("tag button in form clicked");
       const payload = {
         username: this.tagUserForm.username,
         photoID: this.tagPhotoID,
@@ -261,14 +372,14 @@ export default {
           this.showMessage = true;
         }).catch((error) => {
           // eslint-disable-next-line
-
           console.log(error);
         });
     },
-    onClickFollow(username) {
+    onClickFollow() {
+      console.log("follow button clicked");
       const params = {
         followerUsername: localStorage.username,
-        followeeUsername: username,
+        followeeUsername: this.clickedPhoto.photoOwner,
       };
       this.requestFollow(params);
     },
@@ -277,17 +388,36 @@ export default {
       console.log("Photo ID: " + photoID);
       this.tagPhotoID = photoID;
     },
+    onClickLike(photoID) {
+      const params = {
+        username: localStorage.username,
+        photoID: photoID,
+      };
+      this.requestLike(params);
+    },
     onSubmitPost(evt) {
       evt.preventDefault();
       this.$refs.postPhotoModal.hide();
       let allFollowers = false;
       if (this.postPhotoForm.allFollowers[0]) allFollowers = true;
+      
+      let groupName = null, groupOwner = null;
+      if (this.selected != null) {
+        groupName = this.groups[this.selected].groupName;
+        groupOwner = this.groups[this.selected].groupOwner; 
+      }
+
+      console.log("Group Name: " + groupName);
+      console.log("Group owener: " + groupOwner);
       const payload = {
         username: localStorage.username,
         filePath: this.postPhotoForm.filePath,
         caption: this.postPhotoForm.caption,
         allFollowers,
+        groupName: groupName,
+        groupOwner: groupOwner,
       };
+
       this.addPhoto(payload);
       this.initForm();
     },
@@ -302,6 +432,7 @@ export default {
       this.postPhotoForm.allFollowers = [];
       this.followUserForm.username = '';
       this.tagUserForm.username = '';
+      this.commentForm.comment = '';
     },
     onSubmitFollow(evt) {
       evt.preventDefault();
@@ -321,6 +452,7 @@ export default {
     onSubmitTag(evt) {
       evt.preventDefault();
       this.$refs.tagUserModal.hide();
+      this.tag();
       this.initForm();
 
       // check
@@ -332,6 +464,69 @@ export default {
       evt.preventDefault();
       this.$refs.tagUserModal.hide();
       this.initForm();
+    },
+    onClickComment(photoID) {
+      this.commentPhotoID = photoID;
+    }, 
+    comment(params) {
+      const path = 'http://localhost:5000/comment';
+      axios.post(path, params)
+        .then((res) => {
+          this.message = res.data.message;
+          this.showMessage = true;
+        }).catch((error) => {
+
+        });
+    },
+    onSubmitComment(evt) {
+      evt.preventDefault();
+      this.$refs.commentModal.hide();
+      const params = {
+        username: localStorage.username,
+        photoID: this.commentPhotoID,
+        commentText: this.commentForm.comment,
+      };
+      this.comment(params);
+      this.initForm();
+    },
+    onCancelComment(evt) {
+      evt.preventDefault();
+      this.$refs.commentModal.hide();
+      this.initForm();
+    },
+    onClickPhoto(index) {
+      this.clickedPhoto = this.photos[index];
+      console.log("Photo: " + this.photos[index].photoID + " is clicked!");
+      this.requestTagees(this.photos[index].photoID);
+      setTimeout(() => {
+        this.requestComments(this.clickedPhoto.photoID);
+      }, 500);
+    },
+    requestTagees(photoID) {
+      const path = 'http://localhost:5000/taglist';
+      const params = {
+        photoID: photoID,
+      };
+      axios.get(path, {params})
+        .then((res) => {
+          this.tagees = res.data.tagees;
+        }).catch((error) => {
+          // eslint-disable-next-line
+          console.log(error);
+        });
+    },
+    requestComments(photoID) {
+      const path = 'http://localhost:5000/comment';
+      const params = {
+        photoID: photoID,
+      };
+      axios.get(path, {params})
+        .then((res) => {
+          this.comments = res.data.comments;
+        }).catch((error) => {
+          // eslint-disable-next-line
+          console.log(error);
+        });
     },
   },
 };
