@@ -325,6 +325,7 @@ export default {
           } else {
             this.message = res.data.errmsg;
             this.showMessage = true;
+            console.log("search error: " + res.data.errmsg);
           }
         }).catch((error) => {
           // eslint-disable-next-line
