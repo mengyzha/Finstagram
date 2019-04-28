@@ -97,10 +97,10 @@ def all_photos():
 		filePath = post_data.get('filePath')
 		caption = post_data.get('caption')
 		allFollowers = post_data.get('allFollowers')
-		groupName = post_data.get('groupName')
-		groupOwner = post_data.get('groupOwner')
-		print(groupName)
-		print(groupOwner)
+		groupNames = post_data.get('groupNames')
+		groupOwners = post_data.get('groupOwners')
+		# print(groupNames)
+		# print(groupOwners)
 
 		# cursor used to send queries
 		ins = 'INSERT INTO Photo (photoOwner, timestamp, filePath, caption, allFollowers) VALUES (%s, %s, %s, %s, %s)'
@@ -109,21 +109,25 @@ def all_photos():
 			conn.commit()
 
 		# if specifies a group
-		if (groupName):
+		if (len(groupNames) and len(groupOwners)):
 			# first find photoID
 			query = 'SELECT max(photoID) AS max_ID FROM Photo'
 			with conn.cursor() as cursor:
 				cursor.execute(query)
 				result = cursor.fetchone()
 			photoID = result['max_ID']
-			print(photoID)
+			# print(photoID)
 
 			# then insert into share
 			query = 'INSERT INTO Share (groupName, groupOwner, photoID) VALUES (%s, %s, %s)'
-			with conn.cursor() as cursor:
-				cursor.execute(query, (groupName, groupOwner, photoID))
-				conn.commit()
 
+			for i in range(len(groupNames)):
+				# print(groupNames[i])
+				# print(groupOwners[i])
+				with conn.cursor() as cursor:
+					cursor.execute(query, (groupNames[i], groupOwners[i], photoID))
+					conn.commit()
+			
 		response_object['message'] = 'Photo added!'
 	else:
 		# Problem: when username is null, have keyerror 
@@ -152,7 +156,6 @@ def all_photos():
 		response_object['errmsg'] = 'You need to login first'
 		return jsonify(response_object)
 
-	cursor.close()
 	return jsonify(response_object)
 
 @app.route('/search', methods = ['GET'])

@@ -108,9 +108,18 @@
             <b-form-checkbox value="true">All Followers?</b-form-checkbox>
           </b-form-checkbox-group>
         </b-form-group>
-        <b-form-group>
-          <b-form-select v-model="selected" :options="options"></b-form-select>
+        <!-- <b-form-group> -->
+          <!-- <b-form-select v-model="selected" :options="options"></b-form-select> -->
+        <b-form-group label="Please Select Shared Groups:" label-for="form-checkbox-group">
+          <b-form-checkbox-group
+            id="form-checkbox-group"
+            v-model="selected"
+            :options="options"
+            name="flavour-2a"
+            stacked
+          ></b-form-checkbox-group>
         </b-form-group>
+        <!-- </b-form-group> -->
 
         <b-button type="submit" variant="primary">Post</b-button>
         <b-button type="reset" variant="danger">Cancel</b-button>
@@ -219,9 +228,9 @@ export default {
       },
       tagPhotoID: '',
       commentPhotoID: '',
-      selected: null,
+      selected: [],
       options: [
-        { value: null, text: 'Please select a group to share' },
+        // { value: null, text: 'Please select a group to share' },
       ],
     };
   },
@@ -408,29 +417,32 @@ export default {
       let allFollowers = false;
       if (this.postPhotoForm.allFollowers[0]) allFollowers = true;
       
-      let groupName = null, groupOwner = null;
-      if (this.selected != null) {
-        groupName = this.groups[this.selected].groupName;
-        groupOwner = this.groups[this.selected].groupOwner; 
+      let groupNames = [], groupOwners = [];
+
+      for (let i = 0; i < this.selected.length; ++i) {
+        groupNames.push(this.groups[this.selected[i]].groupName);
+        groupOwners.push(this.groups[this.selected[i]].groupOwner);
       }
 
-      console.log("Group Name: " + groupName);
-      console.log("Group owener: " + groupOwner);
+      console.log("Group Names: " + groupNames);
+      console.log("Group oweners: " + groupOwners);
       const payload = {
         username: localStorage.username,
         filePath: this.postPhotoForm.filePath,
         caption: this.postPhotoForm.caption,
         allFollowers,
-        groupName: groupName,
-        groupOwner: groupOwner,
+        groupNames: groupNames,
+        groupOwners: groupOwners,
       };
 
       this.addPhoto(payload);
+      this.selected = []; // clear selecetd groups;
       this.initForm();
     },
     onCancelPost(evt) {
       evt.preventDefault();
       this.$refs.postPhotoModal.hide();
+      this.selected = [];
       this.initForm();
     },
     initForm() {
