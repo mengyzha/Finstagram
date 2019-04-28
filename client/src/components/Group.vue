@@ -42,10 +42,10 @@
             <tr v-for="(group, index) in groups" :key="index">
               <td>{{ group.groupName }}</td>
               <td>{{ group.groupOwner }}</td>
-              <td v-if="group.groupOwner === username">
-                <b-button v-b-modal.add-modal @click="setGroupName(group.groupName)" variant="success" size="sm">Add User</b-button>
-                <b-button v-b-modal.remove-modal @click="setGroupName(group.groupName)" variant="warning" size="sm">Remove User</b-button>
-                <b-button @click="setGroupName(group.groupName)" variant="danger" size="sm">Remove Group</b-button>
+              <td>
+                <b-button v-b-modal.add-modal v-if="group.groupOwner === username" @click="setGroupName(group.groupName)" variant="success" size="sm">Add User</b-button>
+                <b-button v-b-modal.remove-modal v-if="group.groupOwner === username" @click="setGroupName(group.groupName)" variant="warning" size="sm">Remove User</b-button>
+                <b-button v-b-modal.show-users-modal @click="onClickShowUsers(group.groupName, group.groupOwner)" variant="outline-info" size="sm">Show Members</b-button>
               </td>
             </tr>
           </tbody>
@@ -110,6 +110,17 @@
         <b-button type="reset" variant="danger">Cancel</b-button>
       </b-form>
     </b-modal>
+
+    <b-modal
+      ref="showUsersModal"
+      id="show-users-modal"
+      title="Users belong in this group"
+      scrollable
+    >
+      <b-list-group>
+        <b-list-group-item v-for="(groupMember, index) in groupMembers" :key="index">{{groupMember.username}}</b-list-group-item>
+      </b-list-group>
+    </b-modal>
   </div>
 </template>
 
@@ -123,6 +134,7 @@ export default {
     return {
       username: null,
       groups: [],
+      groupMembers: [],
       addUserForm: {
         username: '',
       },
@@ -189,12 +201,29 @@ export default {
           this.showMessage = true;
         }).catch((error) => {
           // eslint-disable-next-line
-          console.log(res.data.status);
+          console.log(error);
         });
     },
     setGroupName(groupName) {
       console.log(groupName);
       this.groupName = groupName;
+    },
+    getMembers(groupOwner) {
+      const path = 'http://localhost:5000/group_members'; 
+      const params = {
+        groupName: this.groupName,
+        groupOwner: groupOwner,
+      };
+      axios.get(path, {params})
+        .then((res) => {
+          this.groupMembers = res.data.groupMembers;
+        }).catch((error) => {
+
+        });
+    },
+    onClickShowUsers(groupName, groupOwner) {
+      this.setGroupName(groupName);
+      this.getMembers(groupOwner);
     },
     onSubmitAdd(evt) {
       evt.preventDefault();

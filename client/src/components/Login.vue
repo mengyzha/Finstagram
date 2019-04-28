@@ -11,7 +11,7 @@
 
       <p>
         Users are able to log in, post photos, view the photos posted by others (public
-        photos, photos posted by people they are following, and close friends, detailed below), tag
+        photos, photos posted by people they are following, and close friends), tag
         photos items with handles of people, etc. 
         container.
       </p>

@@ -96,7 +96,7 @@ export default {
         .then((res) => {
             this.message = res.data.message;
             this.showMessage = true;
-            this.getFollows();
+            this.getFollowingList();
         }).catch((error) => {
             // eslint-disable-next-line
             console.log(error);

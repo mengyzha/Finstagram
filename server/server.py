@@ -97,34 +97,42 @@ def all_photos():
 		filePath = post_data.get('filePath')
 		caption = post_data.get('caption')
 		allFollowers = post_data.get('allFollowers')
-		groupName = post_data.get('groupName')
-		groupOwner = post_data.get('groupOwner')
-		print(groupName)
-		print(groupOwner)
+		groupNames = post_data.get('groupNames')
+		groupOwners = post_data.get('groupOwners')
+		# print(groupNames)
+		# print(groupOwners)
 
 		# cursor used to send queries
-		ins = 'INSERT INTO Photo (photoOwner, timestamp, filePath, caption, allFollowers) VALUES (%s, %s, %s, %s, %s)'
-		with conn.cursor() as cursor:
-			cursor.execute(ins, (username, timestamp, filePath, caption, allFollowers))
-			conn.commit()
-
-		# if specifies a group
-		if (groupName):
-			# first find photoID
-			query = 'SELECT max(photoID) AS max_ID FROM Photo'
+		try:
+			ins = 'INSERT INTO Photo (photoOwner, timestamp, filePath, caption, allFollowers) VALUES (%s, %s, %s, %s, %s)'
 			with conn.cursor() as cursor:
-				cursor.execute(query)
-				result = cursor.fetchone()
-			photoID = result['max_ID']
-			print(photoID)
-
-			# then insert into share
-			query = 'INSERT INTO Share (groupName, groupOwner, photoID) VALUES (%s, %s, %s)'
-			with conn.cursor() as cursor:
-				cursor.execute(query, (groupName, groupOwner, photoID))
+				cursor.execute(ins, (username, timestamp, filePath, caption, allFollowers))
 				conn.commit()
 
-		response_object['message'] = 'Photo added!'
+			# if specifies a group
+			if (len(groupNames) and len(groupOwners)):
+				# first find photoID
+				query = 'SELECT max(photoID) AS max_ID FROM Photo'
+				with conn.cursor() as cursor:
+					cursor.execute(query)
+					result = cursor.fetchone()
+				photoID = result['max_ID']
+				# print(photoID)
+
+				# then insert into share
+				query = 'INSERT INTO Share (groupName, groupOwner, photoID) VALUES (%s, %s, %s)'
+
+				for i in range(len(groupNames)):
+					# print(groupNames[i])
+					# print(groupOwners[i])
+					with conn.cursor() as cursor:
+						cursor.execute(query, (groupNames[i], groupOwners[i], photoID))
+						conn.commit()
+				
+			response_object['message'] = 'Photo posted successfully!'
+		except Exception as error:
+			errno, errmsg = error.args
+			response_object['message'] = errmsg
 	else:
 		# Problem: when username is null, have keyerror 
 		username = request.args['username']
@@ -152,16 +160,32 @@ def all_photos():
 		response_object['errmsg'] = 'You need to login first'
 		return jsonify(response_object)
 
-	cursor.close()
 	return jsonify(response_object)
 
 @app.route('/search', methods = ['GET'])
 def searchByPoster():
 	if (request.method =='GET'):
 		response_object = {'status': 'success'}
-		# post_data = request.get_json()
 		username = request.args['username']
 		photoOwner = request.args['poster']
+
+		# 1. verify if valid user
+		query = 'SELECT * FROM Person WHERE username = %s'
+		try:
+			with conn.cursor() as cursor:
+				cursor.execute(query, photoOwner)
+				result = cursor.fetchone()
+				if (not result):
+					response_object['errno'] = 401
+					response_object['errmsg'] = 'User does not exist'
+					return jsonify(response_object)
+		except Exception as error:
+			errno, errmsg = error.args
+			response_object['errno'] = errno
+			response_object['errmsg'] = errmsg
+			return jsonify(response_object)
+
+		# 2. get photos
 		query = '''SELECT DISTINCT *
 				   FROM Photo
 				   WHERE photoOwner = %s
@@ -413,6 +437,18 @@ def getTagList():
 	response_object['tagees'] = results;
 	return jsonify(response_object)
 
+@app.route('/group_members', methods = ['GET'])
+def getGroupMembers():
+	response_object = {'status':'success'}
+	groupName = request.args['groupName']
+	groupOwner = request.args['groupOwner']
+
+	with conn.cursor() as cursor:
+		query = 'SELECT username FROM Belong WHERE groupName = %s AND groupOwner = %s'
+		cursor.execute(query, (groupName, groupOwner))
+		groupMembers = cursor.fetchall()
+		response_object['groupMembers'] = groupMembers
+	return jsonify(response_object)
 
 @app.route('/group', methods = ['POST', 'PUT', 'GET'])
 def all_groups():
