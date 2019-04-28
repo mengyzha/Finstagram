@@ -28,7 +28,7 @@
             <template slot="button-content"><em>User</em></template>
             <b-dropdown-item v-b-modal.post-modal >Post</b-dropdown-item>
             <b-dropdown-item v-b-modal.follow-modal>Follow</b-dropdown-item>
-            <b-dropdown-item @click="logout">Sign Out</b-dropdown-item>
+            <b-dropdown-item @click="onClickSignOut">Sign Out</b-dropdown-item>
           </b-nav-item-dropdown>
         </b-navbar-nav>
       </b-collapse>
@@ -112,7 +112,6 @@
         </b-form-group>
         <b-form-group>
           <b-form-select v-model="selected" :options="options"></b-form-select>
-          <!-- <div class="mt-3">Selected: <strong>{{ selected }}</strong></div> -->
         </b-form-group>
 
         <b-button type="submit" variant="primary">Post</b-button>
@@ -324,6 +323,16 @@ export default {
           // eslint-disable-next-line
           console.log(error);
         });
+    },
+    onClickSignOut() {
+      // show a confirm prompt 
+      this.$bvModal.msgBoxConfirm('Are you sure?')
+        .then(value => {
+          console.log("Value: " + value);
+          if (value == true) {
+            this.logout();
+          }
+        }).catch(error => {})
     },
     logout() {
       const path = 'http://localhost:5000/logout';
