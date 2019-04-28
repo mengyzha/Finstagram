@@ -57,9 +57,7 @@
         >
           <b-card-img :src="photo.filePath" alt="Image" top v-b-modal.photo-modal></b-card-img>
           <b-card-text v-if="photo.caption != null">{{photo.caption}}</b-card-text>
-          <br>
           <b-card-text class="small text-muted">{{photo.photoID}} posted at {{photo.timestamp}}</b-card-text>
-          <br><br>
           <!-- <button class="btn btn-outline-primary" @click="onClickFollow(photo.photoOwner)">Follow</button> -->
           <b-button variant="outline-primary" size="sm" @click="onClickLike(photo.photoID)">Like</b-button>
           <b-button variant="outline-secondary" size="sm" @click="onClickTag(photo.photoID)" v-b-modal.tag-modal>Tag</b-button>
