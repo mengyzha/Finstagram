@@ -416,6 +416,18 @@ def getTagList():
 	response_object['tagees'] = results;
 	return jsonify(response_object)
 
+@app.route('/group_members', methods = ['GET'])
+def getGroupMembers():
+	response_object = {'status':'success'}
+	groupName = request.args['groupName']
+	groupOwner = request.args['groupOwner']
+
+	with conn.cursor() as cursor:
+		query = 'SELECT username FROM Belong WHERE groupName = %s AND groupOwner = %s'
+		cursor.execute(query, (groupName, groupOwner))
+		groupMembers = cursor.fetchall()
+		response_object['groupMembers'] = groupMembers
+	return jsonify(response_object)
 
 @app.route('/group', methods = ['POST', 'PUT', 'GET'])
 def all_groups():
